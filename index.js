@@ -8,7 +8,7 @@ app.use(cors());
 
 // Add your routes here
 
-app.get('/@:un', (req, res) => {
+app.head('/@:un', (req, res) => {
     var un = req.params.un;
     const protocol = req.protocol;
     const host = req.hostname
@@ -20,26 +20,16 @@ app.get('/@:un', (req, res) => {
     })
 })
 
-app.get('/dlux/@:un/:permlink', (req, res) => {
+app.head('/:str/@:un/:permlink', (req, res) => {
     var un = req.params.un;
     var permlink = req.params.permlink;
     const protocol = req.protocol;
     const host = req.hostname
-    getHiveContent(un, permlink, "dlux", protocol, host).then((template) => {
+    getHiveContent(un, permlink, req.params.str, protocol, host).then((template) => {
         res.send(template.html);
     }).catch((e) => {
         console.log(e)
         res.send(e);
-    })
-})
-
-app.get('/blog/@:un/:permlink', (req, res) => {
-    var un = req.params.un;
-    var permlink = req.params.permlink;
-    const protocol = req.protocol;
-    const host = req.hostname
-    getHiveContent(un, permlink, "blog", protocol, host).then((template) => {
-        res.send(template.html);
     })
 })
 
