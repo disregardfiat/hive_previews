@@ -313,7 +313,6 @@ function makeManifest(un, permlink, str, p, h){
                     }
                     //websafe " 
                     template.description = template.description.replace(/"/g, "'");
-                    template.html = template.html.replace("$IMAGE", template.image);
                     template.html = template.html.replace("$CONTENT", template.description);
                     template.html = template.html.replace(/TITLE/g, template.title);
                     resolve(template);
