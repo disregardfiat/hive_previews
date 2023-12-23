@@ -264,7 +264,7 @@ function makeManifest(un, permlink, str, p, h){
 "name": "TITLE",
 "short_name": "DLUX-dApp",
 "start_url": "/",
-"scope": "${p}://${h}",
+"scope": "https://${h}/index.html?author=${un}&permlink=${permlink}&hash=HASH",
 "display": "standalone",
 "background_color": "#111222",
 "theme_color": "#111222",
@@ -308,6 +308,16 @@ function makeManifest(un, permlink, str, p, h){
                         if(!template.image){
                             template.image = `${p}://${h}${config.img}`;
                         }
+                        var hashy = json_metadata.vrHash
+                        if (!hashy) {
+                            hashy = json_metadata.arHash
+                        }
+                        if (!hashy) {
+                            hashy = json_metadata.appHash
+                        }
+                        if (!hashy) {
+                            hashy = json_metadata.audHash
+                        }
                     } catch (e) {
                         template.image = `${p}://${h}${config.img}`;
                     }
@@ -316,6 +326,7 @@ function makeManifest(un, permlink, str, p, h){
                     template.description = template.description.replace(/(\r\n|\n|\r)/gm, " ");
                     template.js = template.js.replace("$CONTENT", template.description);
                     template.js = template.js.replace(/TITLE/g, template.title);
+                    template.js = template.js.replace("HASH", hashy);
                     resolve(template);
                 } else {
                     reject("Not Found")
