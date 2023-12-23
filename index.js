@@ -213,19 +213,29 @@ if (event.request.url.startsWith(self.location.origin)) {
             .then((response) => response.json())
             .then((res) => {
                 if(res.result?.author == un){
-                    var metadata = res.result.json_metadata
-                    var hashy = JSON.parse(metadata).vrHash
-                    if (!hashy) {
-                        hashy = JSON.parse(metadata).arHash
+                    try {
+                        var metadata = JSON.parse(res.result.json_metadata)
+                        var hashy = metadata.vrHash
+                        if (!hashy) {
+                            hashy = metadata.arHash
+                        }
+                        if (!hashy) {
+                            hashy = metadata.appHash
+                        }
+                        if (!hashy) {
+                            hashy = metadata.audHash
+                        }
+                        var assetsString = hashy;
+                        for(var i = 0; i < metadata.assets.length; i++){
+                            if(metadata.assets[i].hash == str && metadata.assets[i].hash != hashy){
+                                assetsString += "','ipfs/" + metadata.assets[i].hash
+                            }
+                        }
+                        template.js = template.js.replace("$DAPP", hashy);
+                        resolve(template);
+                    } catch (e) {
+                        reject(e)
                     }
-                    if (!hashy) {
-                        hashy = JSON.parse(metadata).appHash
-                    }
-                    if (!hashy) {
-                        hashy = JSON.parse(metadata).audHash
-                    }
-                    template.js = template.js.replace("$DAPP", hashy);
-                    resolve(template);
                 } else {
                     reject("Not Found")
                 }
