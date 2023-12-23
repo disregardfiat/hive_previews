@@ -1,6 +1,12 @@
 # hive_previews
 
+Since Hive content can generally be assembled 100% client side, we've built a static site. But, we've found 2 uses for generating dynmaic content. The first is to generate meta content for robots ( SEO and Link Previews ). The Second is to generate a manifest / service worker for DLUX dApp content so dApps can have nearly all the bells and whistles of the modern browser.
+
+## Robots and Previews
+
 Run this service on your static hive frontend and shunt HEAD requests and bot user agents to this service instead of serving static files.
+
+Since these routes should only be accesible by upstream rules... you should only have to configure the upstream.
 
 Sample NGINX Directives
 
@@ -22,5 +28,7 @@ Sample NGINX Directives
 If you are using cloudflare you may run into their cache as well and bypassing your cloudflare cache with this rule:
 
 `(http.request.method eq "HEAD") or (http.user_agent contains "bot")`
+* Would use your local cache for bots, and cloudflares cache for your static pages.
 
-Would use your local cache for bots, and cloudflares cache for your static pages.
+## Service Worker
+Quite simply this will allow a DLUX dApp to dynamically generate a service worker that only caches two files. The dApp container (index.html) and the application itself (ipfs/CID). The dApp will need to properly call the service worker from it's location.
