@@ -20,6 +20,20 @@ app.get('/@:un', (req, res) => {
     })
 })
 
+app.get('/:str/@:un/:permlink/service-worker.js', (req, res) => {
+    var un = req.params.un;
+    var permlink = req.params.permlink;
+    const protocol = req.protocol;
+    const host = req.hostname
+    makeSW(un, permlink, req.params.str, protocol, host).then((template) => {
+        res.setHeader('Content-Type', 'application/javascript');
+        res.send(template.js);
+    }).catch((e) => {
+        console.log(e)
+        res.status(404)
+    })
+})
+
 app.get('/:str/@:un/:permlink', (req, res) => {
     var un = req.params.un;
     var permlink = req.params.permlink;
@@ -139,5 +153,83 @@ function getHiveAccount(un, p, h){
                 console.log({template})
                 resolve(template);
             });
+    })
+}
+
+function makeSW(un, permlink, str, p, h){
+    return new Promise((resolve, reject) => {
+        var template = {
+            js: `const PRECACHE = 'precache-v1';
+const RUNTIME = 'runtime';
+const PRECACHE_URLS = ['index.html','ipfs/$DAPP'];
+              
+self.addEventListener('install', event => {
+event.waitUntil(
+    caches.open(PRECACHE)
+    .then(cache => cache.addAll(PRECACHE_URLS))
+    .then(self.skipWaiting())
+);
+});
+self.addEventListener('activate', event => {
+const currentCaches = [PRECACHE, RUNTIME];
+event.waitUntil(
+    caches.keys().then(cacheNames => {
+    return cacheNames.filter(cacheName => !currentCaches.includes(cacheName));
+    }).then(cachesToDelete => {
+    return Promise.all(cachesToDelete.map(cacheToDelete => {
+        return caches.delete(cacheToDelete);
+    }));
+    }).then(() => self.clients.claim())
+);
+});
+self.addEventListener('fetch', event => {
+if (event.request.url.startsWith(self.location.origin)) {
+    event.respondWith(
+    caches.match(event.request).then(cachedResponse => {
+        if (cachedResponse) {
+        return cachedResponse;
+        }
+
+        return caches.open(RUNTIME).then(cache => {
+        return fetch(event.request).then(response => {
+            return cache.put(event.request, response.clone()).then(() => {
+            return response;
+            });
+        });
+        });
+    })
+    );
+}
+});`,
+        }
+        fetch(config.hapi, {
+            body: `{"jsonrpc":"2.0", "method":"condenser_api.get_content", "params":["${un}", "${permlink}"], "id":1}`,
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            method: "POST",
+          })
+            .then((response) => response.json())
+            .then((res) => {
+                if(res.result?.author == un){
+                    var metadata = res.result.json_metadata
+                    var hashy = JSON.parse(metadata).vrHash
+                    if (!hashy) {
+                        hashy = JSON.parse(metadata).arHash
+                    }
+                    if (!hashy) {
+                        hashy = JSON.parse(metadata).appHash
+                    }
+                    if (!hashy) {
+                        hashy = JSON.parse(metadata).audHash
+                    }
+                    template.js = template.js.replace("$DAPP", hashy);
+                    resolve(template);
+                } else {
+                    reject("Not Found")
+                }
+            }).catch((e) => {
+                reject(e)
+            })
     })
 }
