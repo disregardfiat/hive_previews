@@ -270,17 +270,17 @@ function makeManifest(un, permlink, str, p, h){
 "theme_color": "#111222",
 "description": "$CONTENT",
 "icons": [{
-    "src": "img/dlux-hive-logo-alpha.svg",
+    "src": "/img/dlux-hive-logo-alpha.svg",
     "sizes": "192x192",
     "type": "image/svg"
 },
 {
-    "src": "img/dlux-logo-icon.png",
+    "src": "/img/dlux-logo-icon.png",
     "sizes": "695x695",
     "type": "image/png",
     "purpose": "any"
 },{
-    "src": "img/dlux-icon-192.png",
+    "src": "/img/dlux-icon-192.png",
     "sizes": "192x192",
     "type": "image/png",
     "purpose": "any maskable"
