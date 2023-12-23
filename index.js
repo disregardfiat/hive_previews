@@ -35,6 +35,20 @@ app.get('/:str/@:un/:permlink/service-worker.js', (req, res) => {
     })
 })
 
+app.get('/:str/@:un/:permlink/manifest.webmanifest', (req, res) => {
+    var un = req.params.un;
+    var permlink = req.params.permlink;
+    const protocol = req.protocol;
+    const host = req.hostname
+    makeManifest(un, permlink, req.params.str, protocol, host).then((template) => {
+        res.setHeader('Content-Type', 'application/javascript');
+        res.send(template.js);
+    }).catch((e) => {
+        console.log(e)
+        res.status(404)
+    })
+})
+
 app.get('/:str/@:un/:permlink', (req, res) => {
     var un = req.params.un;
     var permlink = req.params.permlink;
@@ -83,7 +97,6 @@ function getHiveContent(un, permlink, str, p, h){
                     template.description = res.result.body.substring(0, 200);
                     template.title = res.result.title;
                     const json_metadata = JSON.parse(res.result.json_metadata);
-                    console.log(json_metadata)
                     if(json_metadata.content?.description)template.description = json_metadata.content.description;
                     if(json_metadata.video?.content?.description)template.description = json_metadata.video.content.description;
                     try {
@@ -99,7 +112,6 @@ function getHiveContent(un, permlink, str, p, h){
                     template.html = template.html.replace("$IMAGE", template.image);
                     template.html = template.html.replace("$CONTENT", template.description);
                     template.html = template.html.replace(/TITLE/g, template.title);
-                    console.log({template})
                     resolve(template);
                 } else {
                     reject("Not Found")
@@ -151,7 +163,6 @@ function getHiveAccount(un, p, h){
                 template.description = template.description.replace(/"/g, "'");
                 template.html = template.html.replace("$IMAGE", template.image);
                 template.html = template.html.replace("$CONTENT", template.description);
-                console.log({template})
                 resolve(template);
             });
     })
@@ -236,6 +247,76 @@ if (event.request.url.startsWith(self.location.origin)) {
                     } catch (e) {
                         reject(e)
                     }
+                } else {
+                    reject("Not Found")
+                }
+            }).catch((e) => {
+                reject(e)
+            })
+    })
+}
+
+function makeManifest(un, permlink, str, p, h){
+    return new Promise((resolve, reject) => {
+        var template = {
+            js: `{
+"$schema": "https://json.schemastore.org/web-manifest-combined.json",
+"name": "TITLE",
+"short_name": "DLUX-dApp",
+"start_url": "/",
+"scope": ".",
+"display": "standalone",
+"background_color": "#111222",
+"theme_color": "#111222",
+"description": "$CONTENT",
+"icons": [{
+    "src": "img/dlux-hive-logo-alpha.svg",
+    "sizes": "192x192",
+    "type": "image/svg"
+},
+{
+    "src": "img/dlux-logo-icon.png",
+    "sizes": "695x695",
+    "type": "image/png",
+    "purpose": "any"
+},{
+    "src": "img/dlux-icon-192.png",
+    "sizes": "192x192",
+    "type": "image/png",
+    "purpose": "any maskable"
+}
+]
+}`,
+        }
+        fetch(config.hapi, {
+            body: `{"jsonrpc":"2.0", "method":"condenser_api.get_content", "params":["${un}", "${permlink}"], "id":1}`,
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            method: "POST",
+          })
+            .then((response) => response.json())
+            .then((res) => {
+                if(res.result?.author == un){
+                    template.description = res.result.body.substring(0, 200);
+                    template.title = res.result.title;
+                    const json_metadata = JSON.parse(res.result.json_metadata);
+                    if(json_metadata.content?.description)template.description = json_metadata.content.description;
+                    if(json_metadata.video?.content?.description)template.description = json_metadata.video.content.description;
+                    try {
+                        template.image = json_metadata.image[0]
+                        if(!template.image){
+                            template.image = `${p}://${h}${config.img}`;
+                        }
+                    } catch (e) {
+                        template.image = `${p}://${h}${config.img}`;
+                    }
+                    //websafe " 
+                    template.description = template.description.replace(/"/g, "'");
+                    template.html = template.html.replace("$IMAGE", template.image);
+                    template.html = template.html.replace("$CONTENT", template.description);
+                    template.html = template.html.replace(/TITLE/g, template.title);
+                    resolve(template);
                 } else {
                     reject("Not Found")
                 }
