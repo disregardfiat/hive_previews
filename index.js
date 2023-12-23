@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const config = require('./config.js');
+const fetch = require('node-fetch');
 
 const app = express();
 
