@@ -313,8 +313,8 @@ function makeManifest(un, permlink, str, p, h){
                     }
                     //websafe " 
                     template.description = template.description.replace(/"/g, "'");
-                    template.html = template.html.replace("$CONTENT", template.description);
-                    template.html = template.html.replace(/TITLE/g, template.title);
+                    template.js = template.js.replace("$CONTENT", template.description);
+                    template.js = template.js.replace(/TITLE/g, template.title);
                     resolve(template);
                 } else {
                     reject("Not Found")
