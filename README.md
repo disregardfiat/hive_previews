@@ -30,5 +30,7 @@ If you are using cloudflare you may run into their cache as well and bypassing y
 `(http.request.method eq "HEAD") or (http.user_agent contains "bot")`
 * Would use your local cache for bots, and cloudflares cache for your static pages.
 
-## Service Worker
-Quite simply this will allow a DLUX dApp to dynamically generate a service worker that only caches two files. The dApp container (index.html) and the application itself (ipfs/CID). The dApp will need to properly call the service worker from it's location.
+## Service Worker / manifest.webmanifest
+Quite simply this will allow a DLUX dApp to dynamically generate a service worker that builds a cache of included IPFS files. Most importantly the dApp container (index.html) and the application itself (ipfs/CID). This will be called from the dApp container allowing any dApp to be viewed in offline mode.
+
+Future improvements could parse a little more data from the custom_json to define an icon, short app title, or other PWA features.

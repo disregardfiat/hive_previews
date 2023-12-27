@@ -264,7 +264,7 @@ function makeManifest(un, permlink, str, p, h){
 "name": "TITLE",
 "short_name": "DLUX-dApp",
 "start_url": "https://${h}/index.html?author=${un}&permlink=${permlink}&hash=HASH",
-"scope": "https://${h}",
+"scope": "https://${h}/",
 "display": "standalone",
 "background_color": "#111222",
 "theme_color": "#111222",
