@@ -117,15 +117,7 @@ function getHiveContent(un, permlink, str, p, h) {
                     // template.title = res.result.title;
                     // const json_metadata = JSON.parse(res.result.json_metadata);
                     // if(json_metadata.content?.description)template.description = json_metadata.content.description;
-                    // if(json_metadata.video?.content?.description)template.description = json_metadata.video.content.description;
-                    // try {
-                    //     template.image = json_metadata.image[0]
-                    //     if(!template.image){
-                    //         template.image = `${p}://${h}${config.img}`;
-                    //     }
-                    // } catch (e) {
-                    //     template.image = `${p}://${h}${config.img}`;
-                    // }
+                    // if(json_metadata.video?.content?.description)template.description = json_metadata.video.content.description
                     // //websafe " 
                     // template.description = template.description.replace(/"/g, "'");
                     // template.html = template.html.replace("$IMAGE", template.image);
@@ -141,6 +133,14 @@ function getHiveContent(un, permlink, str, p, h) {
 
                     // Clean and set description
                     template.description = cleanDescription(description);
+                    try {
+                        template.image = json_metadata.image[0]
+                        if(!template.image){
+                            template.image = `${p}://${h}${config.img}`;
+                        }
+                    } catch (e) {
+                        template.image = `${p}://${h}${config.img}`;
+                    }
                     template.html = template.html
                         .replace(/\$IMAGE/g, template.image)
                         .replace(/\$CONTENT/g, template.description)
