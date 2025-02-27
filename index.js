@@ -167,6 +167,20 @@ function getHiveAccount(un, p, h) {
         <meta property="og:image" content="$IMAGE">
         <meta property="og:title" content="DLUX | ${un}">
         <meta property="og:description" content="$CONTENT">
+        <meta property="og:image:width" content="300">
+<meta property="og:image:height" content="300">
+        <link rel="canonical" content="${p}://${h}/${str}/@${un}/${permlink}">
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "Person",
+          "name": "${un}",
+          "description": "$CONTENT",
+          "image": "$IMAGE",
+          "url": "${p}://${h}/@${un}",
+          "sameAs": $SOCIAL
+        }
+        </script>
     </head>
 </html>
             `,
