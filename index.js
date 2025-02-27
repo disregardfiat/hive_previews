@@ -29,6 +29,13 @@ app.get('/@:un', (req, res) => {
     })
 })
 
+app.get('/wd', (req, res) => {
+    var un = req.params.un;
+    const protocol = req.protocol;
+    const host = req.hostname
+    res.status(200)
+})
+
 app.get('/:str/@:un/:permlink/service-worker.js', (req, res) => {
     var un = req.params.un;
     var permlink = req.params.permlink;
