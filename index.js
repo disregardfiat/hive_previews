@@ -2,12 +2,20 @@ const express = require('express');
 const cors = require('cors');
 const config = require('./config.js');
 const fetch = require('node-fetch');
+const sanitizeHtml = require('sanitize-html');
+const { marked } = require('marked');
 
+const renderer = { /* ... */ };
+marked.use({ renderer });
+
+function cleanDescription(rawContent) {
+    let text = marked(rawContent);
+    text = sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} });
+    return text.replace(/\s+/g, ' ').trim().substring(0, 160);
+}
 const app = express();
 
 app.use(cors());
-
-// Add your routes here
 
 app.get('/@:un', (req, res) => {
     var un = req.params.un;
@@ -66,7 +74,7 @@ app.listen(config.port, () => {
     console.log(`Server is running on port ${config.port}`);
 });
 
-function getHiveContent(un, permlink, str, p, h){
+function getHiveContent(un, permlink, str, p, h) {
     return new Promise((resolve, reject) => {
         var template = {
             html: `<!DOCTYPE html>
@@ -76,8 +84,19 @@ function getHiveContent(un, permlink, str, p, h){
         <meta property="og:type" content="website">
         <meta property="og:url" content="${p}://${h}/${str}/@${un}/${permlink}">
         <meta property="og:image" content="$IMAGE">
-        <meta property="og:title" content="DLUX | TITLE">
+        <meta property="og:title" content="DLUX | $TITLE">
         <meta property="og:description" content="$CONTENT">
+        <link rel="canonical" content="${p}://${h}/${str}/@${un}/${permlink}">
+        <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "DLUX | $TITLE",
+  "image": "$IMAGE",
+  "author": "${un}",
+  "description": "$CONTENT"
+}
+</script>
     </head>
 </html>
             `,
@@ -87,31 +106,45 @@ function getHiveContent(un, permlink, str, p, h){
         fetch(config.hapi, {
             body: `{"jsonrpc":"2.0", "method":"condenser_api.get_content", "params":["${un}", "${permlink}"], "id":1}`,
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/x-www-form-urlencoded",
             },
             method: "POST",
-          })
+        })
             .then((response) => response.json())
             .then((res) => {
-                if(res.result?.author == un){
-                    template.description = res.result.body.substring(0, 200);
-                    template.title = res.result.title;
-                    const json_metadata = JSON.parse(res.result.json_metadata);
-                    if(json_metadata.content?.description)template.description = json_metadata.content.description;
-                    if(json_metadata.video?.content?.description)template.description = json_metadata.video.content.description;
-                    try {
-                        template.image = json_metadata.image[0]
-                        if(!template.image){
-                            template.image = `${p}://${h}${config.img}`;
-                        }
-                    } catch (e) {
-                        template.image = `${p}://${h}${config.img}`;
-                    }
-                    //websafe " 
-                    template.description = template.description.replace(/"/g, "'");
-                    template.html = template.html.replace("$IMAGE", template.image);
-                    template.html = template.html.replace("$CONTENT", template.description);
-                    template.html = template.html.replace(/TITLE/g, template.title);
+                if (res.result?.author == un) {
+                    // template.description = res.result.body.substring(0, 200);
+                    // template.title = res.result.title;
+                    // const json_metadata = JSON.parse(res.result.json_metadata);
+                    // if(json_metadata.content?.description)template.description = json_metadata.content.description;
+                    // if(json_metadata.video?.content?.description)template.description = json_metadata.video.content.description;
+                    // try {
+                    //     template.image = json_metadata.image[0]
+                    //     if(!template.image){
+                    //         template.image = `${p}://${h}${config.img}`;
+                    //     }
+                    // } catch (e) {
+                    //     template.image = `${p}://${h}${config.img}`;
+                    // }
+                    // //websafe " 
+                    // template.description = template.description.replace(/"/g, "'");
+                    // template.html = template.html.replace("$IMAGE", template.image);
+                    // template.html = template.html.replace("$CONTENT", template.description);
+                    // template.html = template.html.replace(/TITLE/g, template.title);
+                    const content = res.result;
+                    template.title = content.title || 'Untitled';
+                    let description = content.body || 'No description available';
+                    const json_metadata = content.json_metadata ? JSON.parse(content.json_metadata) : {};
+                    description = json_metadata.content?.description ||
+                        json_metadata.video?.content?.description ||
+                        description;
+
+                    // Clean and set description
+                    template.description = cleanDescription(description);
+                    template.html = template.html
+                        .replace(/\$IMAGE/g, template.image)
+                        .replace(/\$CONTENT/g, template.description)
+                        .replace(/\$TITLE/g, template.title);
                     resolve(template);
                 } else {
                     reject("Not Found")
@@ -122,7 +155,7 @@ function getHiveContent(un, permlink, str, p, h){
     })
 }
 
-function getHiveAccount(un, p, h){
+function getHiveAccount(un, p, h) {
     return new Promise((resolve, reject) => {
         var template = {
             html: `<!DOCTYPE html>
@@ -143,10 +176,10 @@ function getHiveAccount(un, p, h){
         fetch(config.hapi, {
             body: `{"jsonrpc":"2.0", "method":"condenser_api.get_accounts", "params":[["${un}"]], "id":1}`,
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/x-www-form-urlencoded",
             },
             method: "POST",
-          })
+        })
             .then((response) => response.json())
             .then((data) => {
                 var accountinfo = data.result[0];
@@ -168,7 +201,7 @@ function getHiveAccount(un, p, h){
     })
 }
 
-function makeSW(un, permlink, str, p, h){
+function makeSW(un, permlink, str, p, h) {
     return new Promise((resolve, reject) => {
         var template = {
             js: `const PRECACHE = 'precache-v1';
@@ -217,13 +250,13 @@ if (event.request.url.startsWith(self.location.origin)) {
         fetch(config.hapi, {
             body: `{"jsonrpc":"2.0", "method":"condenser_api.get_content", "params":["${un}", "${permlink}"], "id":1}`,
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/x-www-form-urlencoded",
             },
             method: "POST",
-          })
+        })
             .then((response) => response.json())
             .then((res) => {
-                if(res.result?.author == un){
+                if (res.result?.author == un) {
                     try {
                         var metadata = JSON.parse(res.result.json_metadata)
                         var hashy = metadata.vrHash
@@ -237,8 +270,8 @@ if (event.request.url.startsWith(self.location.origin)) {
                             hashy = metadata.audHash
                         }
                         var assetsString = hashy;
-                        for(var i = 0; i < metadata.assets.length; i++){
-                            if(metadata.assets[i].hash == str && metadata.assets[i].hash != hashy){
+                        for (var i = 0; i < metadata.assets.length; i++) {
+                            if (metadata.assets[i].hash == str && metadata.assets[i].hash != hashy) {
                                 assetsString += "','ipfs/" + metadata.assets[i].hash
                             }
                         }
@@ -256,7 +289,7 @@ if (event.request.url.startsWith(self.location.origin)) {
     })
 }
 
-function makeManifest(un, permlink, str, p, h){
+function makeManifest(un, permlink, str, p, h) {
     return new Promise((resolve, reject) => {
         var template = {
             js: `{
@@ -291,21 +324,21 @@ function makeManifest(un, permlink, str, p, h){
         fetch(config.hapi, {
             body: `{"jsonrpc":"2.0", "method":"condenser_api.get_content", "params":["${un}", "${permlink}"], "id":1}`,
             headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
+                "Content-Type": "application/x-www-form-urlencoded",
             },
             method: "POST",
-          })
+        })
             .then((response) => response.json())
             .then((res) => {
-                if(res.result?.author == un){
+                if (res.result?.author == un) {
                     template.description = res.result.body.substring(0, 200);
                     template.title = res.result.title;
                     const json_metadata = JSON.parse(res.result.json_metadata);
-                    if(json_metadata.content?.description)template.description = json_metadata.content.description;
-                    if(json_metadata.video?.content?.description)template.description = json_metadata.video.content.description;
+                    if (json_metadata.content?.description) template.description = json_metadata.content.description;
+                    if (json_metadata.video?.content?.description) template.description = json_metadata.video.content.description;
                     try {
                         template.image = json_metadata.image[0]
-                        if(!template.image){
+                        if (!template.image) {
                             template.image = `${p}://${h}${config.img}`;
                         }
                         var hashy = json_metadata.vrHash
